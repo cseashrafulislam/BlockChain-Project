@@ -1,0 +1,122 @@
+﻿@model BlockTest.ViewModel.BlockchainViewModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@Model.Title</title>
+    <link href="~/css/style.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container">
+        <h1>@Model.Title</h1>
+
+        <!-- Blockchain Display -->
+        <div>
+            <h3>Blockchain</h3>
+            <table border="1" cellpadding="5">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>Data</th>
+                        <th>Hash</th>
+                        <th>Previous Hash</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var block in Model.Blocks)
+                    {
+                        <tr>
+                            <td>@block.Index</td>
+                            <td>@block.Data</td>
+                            <td>@block.Hash</td>
+                            <td>@block.PreviousHash</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add Transaction -->
+        <div>
+            <h3>Add Transaction</h3>
+            <form method="post" action="@Url.Action("AddTransaction", "Blockchain")">
+                <input type="text" name="sender" placeholder="Sender Address" required />
+                <input type="text" name="receiver" placeholder="Receiver Address" required />
+                <input type="number" name="amount" placeholder="Amount" required />
+                <button type="submit">Add Transaction</button>
+            </form>
+
+        </div>
+
+        <!-- Mining Section -->
+        <div>
+            <h3>Mine a Block</h3>
+            <input type="text" id="minerAddress" placeholder="Enter Miner Address" required />
+            <button type="button" onclick="mineBlock()">Mine Block</button>
+        </div>
+
+        <!-- Mining Status -->
+        <div id="miningStatus"></div>
+
+        <!-- Blockchain Validation -->
+        <div>
+            <h3>Validate Blockchain</h3>
+            <button onclick="validateBlockchain()">Validate Blockchain</button>
+            <div id="validationResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // Function to initiate mining
+        function mineBlock() {
+            var minerAddress = document.getElementById("minerAddress").value.trim(); // Added .trim() to remove any unwanted spaces
+
+            if (!minerAddress) {
+                alert("Please enter miner address.");
+                return;
+            }
+
+            // Display loading message while mining
+            document.getElementById("miningStatus").innerText = "Mining in progress... Please wait.";
+            document.getElementById("miningStatus").style.color = "orange";
+
+            // Make AJAX request to mine the block
+            fetch('@Url.Action("MineBlock", "Blockchain")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ minerAddress: minerAddress })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById("miningStatus").innerText = "Mining completed! Block added.";
+                        document.getElementById("miningStatus").style.color = "green";
+                        // Reload the page to reflect the changes in the blockchain
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        document.getElementById("miningStatus").innerText = "Mining failed. Please try again.";
+                        document.getElementById("miningStatus").style.color = "red";
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("miningStatus").innerText = "Mining failed. Please try again.";
+                    document.getElementById("miningStatus").style.color = "red";
+                });
+        }
+
+
+        // Function to validate the blockchain
+        function validateBlockchain() {
+            fetch('@Url.Action("Validate", "Blockchain")')
+                .then(response => response.json())
+                .then(data => {
+                    const result = data.isValid ? "Blockchain is valid." : "Blockchain is invalid.";
+                    document.getElementById("validationResult").innerText = result;
+                });
+        }
+    </script>
+</body>
+</html>
